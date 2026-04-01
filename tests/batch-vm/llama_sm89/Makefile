@@ -33,10 +33,31 @@ NVCCFLAGS = -DNDEBUG \
             -shared -fPIC \
             -lpython${PYTHON_VERSION}
 
+COMPILE_FLAGS = -DNDEBUG \
+               -DKITTENS_4090 \
+               --expt-extended-lambda \
+               --expt-relaxed-constexpr \
+               -Xcompiler=-Wno-psabi \
+               -Xcompiler=-fno-strict-aliasing \
+               --use_fast_math \
+               -O3 \
+               -Xptxas=--verbose \
+               -Xptxas=--warn-on-spills \
+               -std=c++20 \
+               -x cu \
+               -lineinfo \
+               -arch=sm_89 \
+               -I${THUNDERKITTENS_ROOT}/include \
+               -I${THUNDERKITTENS_ROOT}/prototype
+
 all: $(TARGET)
+
+# Standalone compile test (no Python/pybind11 required).
+compile_test: test_compile_sm89.cu
+	$(NVCC) test_compile_sm89.cu $(COMPILE_FLAGS) -lcuda -lcudart -o kvm_sm89_test
 
 $(TARGET): $(SRC)
 	$(NVCC) $(SRC) $(NVCCFLAGS) -o $(TARGET)$(shell python3-config --extension-suffix)
 
 clean:
-	rm -f $(TARGET)$(shell python3-config --extension-suffix)
+	rm -f $(TARGET)$(shell python3-config --extension-suffix) kvm_sm89_test
